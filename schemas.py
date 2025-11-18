@@ -1,48 +1,43 @@
 """
-Database Schemas
-
-Define your MongoDB collection schemas here using Pydantic models.
-These schemas are used for data validation in your application.
+Database Schemas for Nutrition App
 
 Each Pydantic model represents a collection in your database.
-Model name is converted to lowercase for the collection name:
-- User -> "user" collection
-- Product -> "product" collection
-- BlogPost -> "blogs" collection
+Collection name = lowercase of the class name.
+
+- Food -> "food"
+- Meal -> "meal"
 """
 
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import List, Optional
 
-# Example schemas (replace with your own):
-
-class User(BaseModel):
+class Food(BaseModel):
     """
-    Users collection schema
-    Collection name: "user" (lowercase of class name)
+    Food items with macros per 100g to standardize calculations
+    Collection: "food"
     """
-    name: str = Field(..., description="Full name")
-    email: str = Field(..., description="Email address")
-    address: str = Field(..., description="Address")
-    age: Optional[int] = Field(None, ge=0, le=120, description="Age in years")
-    is_active: bool = Field(True, description="Whether user is active")
+    name: str = Field(..., description="Food name")
+    calories_per_100g: float = Field(..., ge=0, description="Calories per 100g")
+    protein_per_100g: float = Field(..., ge=0, description="Protein (g) per 100g")
+    carbs_per_100g: float = Field(..., ge=0, description="Carbs (g) per 100g")
+    fat_per_100g: float = Field(0, ge=0, description="Fat (g) per 100g")
 
-class Product(BaseModel):
+class MealItem(BaseModel):
+    """An item in a meal referencing a food and its quantity in grams"""
+    food_id: str = Field(..., description="ID of the food document")
+    quantity_grams: float = Field(..., gt=0, description="Quantity in grams")
+
+class MealTotals(BaseModel):
+    calories: float
+    protein: float
+    carbs: float
+    fat: float
+
+class Meal(BaseModel):
     """
-    Products collection schema
-    Collection name: "product" (lowercase of class name)
+    Saved meals with items and computed totals
+    Collection: "meal"
     """
-    title: str = Field(..., description="Product title")
-    description: Optional[str] = Field(None, description="Product description")
-    price: float = Field(..., ge=0, description="Price in dollars")
-    category: str = Field(..., description="Product category")
-    in_stock: bool = Field(True, description="Whether product is in stock")
-
-# Add your own schemas here:
-# --------------------------------------------------
-
-# Note: The Flames database viewer will automatically:
-# 1. Read these schemas from GET /schema endpoint
-# 2. Use them for document validation when creating/editing
-# 3. Handle all database operations (CRUD) directly
-# 4. You don't need to create any database endpoints!
+    name: str = Field(..., description="Meal name")
+    items: List[MealItem] = Field(default_factory=list)
+    totals: Optional[MealTotals] = None
